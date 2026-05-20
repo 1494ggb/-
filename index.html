@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>星蓝 · OKX币币兑换版</title>
+  <title>星蓝</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@4.0.1/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
   <style>
@@ -20,26 +20,79 @@
       background-size: cover;
       background-color: #e6f2ff;
       color: #0f3460;
-      padding: 25px 12px;
+      padding-top: 70px;
       position: relative;
       overflow-x: hidden;
     }
 
-    /* 右上角悬浮 ImToken 按钮 */
-    .imtoken-float-btn {
+    /* 顶部导航栏 */
+    .top-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      z-index: 998;
+      padding: 0 15px;
+      box-shadow: 0 2px 10px rgba(22,93,255,0.1);
+    }
+
+    .nav-item {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #165DFF;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 15px;
+    }
+
+    .nav-item.active {
+      background: #165DFF;
+      color: #fff;
+    }
+
+    /* 右上角按钮组：主网切换 + ImToken */
+    .top-btn-group {
       position: fixed;
       top: 15px;
       right: 15px;
-      width: 140px;
-      padding: 10px 12px;
-      border-radius: 12px;
+      display: flex;
+      gap: 10px;
+      z-index: 999;
+    }
+
+    .net-switch-btn {
+      width: 120px;
+      padding: 9px 10px;
+      border-radius: 10px;
       border: none;
-      font-size: 15px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #ffffff;
+      color: #165DFF;
+      box-shadow: 0 2px 8px rgba(22, 93, 255, 0.25);
+    }
+
+    .imtoken-float-btn {
+      width: 130px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
       font-weight: bold;
       cursor: pointer;
       background: linear-gradient(90deg, #69b1ff, #165DFF);
       color: #fff;
-      z-index: 999;
       box-shadow: 0 2px 8px rgba(22, 93, 255, 0.25);
     }
 
@@ -50,7 +103,6 @@
       margin-bottom: 25px;
       color: #165DFF;
       text-shadow: 0 0 8px #87CEFA;
-      letter-spacing: 1px;
     }
 
     .container {
@@ -157,96 +209,138 @@
       font-weight:bold;
     }
 
+    /* 功能面板默认隐藏，只显示余额主页 */
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+
     @media (max-width: 600px) {
       .main-title { font-size: 34px; }
       .card { padding: 18px; }
       .card-title { font-size: 20px; }
       .btn-group{ grid-template-columns:1fr; }
+      .top-nav { gap:4px; }
+      .nav-item { font-size:13px; padding:6px 10px; }
     }
   </style>
 </head>
 <body>
-  <!-- 右上角 ImToken 悬浮按钮 -->
-  <button class="imtoken-float-btn" onclick="connectWallet()">连接 ImToken</button>
+  <!-- 顶部导航菜单 -->
+  <div class="top-nav">
+    <button class="nav-item active" onclick="switchPage('home')">主页</button>
+    <button class="nav-item" onclick="switchPage('swap')">BNB兑换</button>
+    <button class="nav-item" onclick="switchPage('network')">主网管理</button>
+    <button class="nav-item" onclick="switchPage('transfer')">代币转账</button>
+    <button class="nav-item" onclick="switchPage('query')">链上查询</button>
+  </div>
+
+  <!-- 右上角按钮组：主网切换 + ImToken -->
+  <div class="top-btn-group">
+    <button class="net-switch-btn" id="netBtn" onclick="quickSwitchNet()">ETH 主网</button>
+    <button class="imtoken-float-btn" onclick="connectWallet()">连接 ImToken</button>
+  </div>
 
   <div class="container">
     <h1 class="main-title">星蓝</h1>
 
-    <div class="card">
-      <h3 class="card-title">✨ 主网切换中心</h3>
-      <select id="network">
-        <option value="1">ETH 以太坊主网</option>
-        <option value="56">BNB Chain 币安智能链</option>
-      </select>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">🔗 本地钱包管理</h3>
-      <div class="btn-group">
-        <button class="btn" onclick="showImport()">导入私钥</button>
-        <button class="btn" onclick="showCreate()">创建钱包</button>
+    <!-- 主页：只显示余额 ETH + USDT -->
+    <div id="home" class="page active">
+      <div class="card">
+        <h3 class="card-title">💰 资产余额</h3>
+        <div class="show-text" id="balanceEth">ETH：--</div>
+        <div class="show-text" id="balanceUsdt">USDT：--</div>
       </div>
 
-      <div id="importBox" style="display:none;margin-top:15px;">
-        <textarea id="privateKey" placeholder="请输入您的钱包私钥"></textarea>
-        <input type="password" id="pwdImport" placeholder="设置AES加密密码">
-        <button class="btn" onclick="importWallet()">确认加密导入</button>
-      </div>
+      <div class="card">
+        <h3 class="card-title">🔗 本地钱包管理</h3>
+        <div class="btn-group">
+          <button class="btn" onclick="showImport()">导入私钥</button>
+          <button class="btn" onclick="showCreate()">创建钱包</button>
+        </div>
 
-      <div id="createBox" style="display:none;margin-top:15px;">
-        <input type="password" id="pwdCreate" placeholder="设置钱包加密密码">
-        <div id="mnemonicView" class="mnemonic-box" style="display:none;"></div>
-        <button class="btn" onclick="createWallet()">一键生成钱包</button>
-      </div>
+        <div id="importBox" style="display:none;margin-top:15px;">
+          <textarea id="privateKey" placeholder="请输入您的钱包私钥"></textarea>
+          <input type="password" id="pwdImport" placeholder="设置AES加密密码">
+          <button class="btn" onclick="importWallet()">确认加密导入</button>
+        </div>
 
-      <div id="walletAddr" class="show-text" style="display: none;"></div>
+        <div id="createBox" style="display:none;margin-top:15px;">
+          <input type="password" id="pwdCreate" placeholder="设置钱包加密密码">
+          <div id="mnemonicView" class="mnemonic-box" style="display:none;"></div>
+          <button class="btn" onclick="createWallet()">一键生成钱包</button>
+        </div>
+
+        <div id="walletAddr" class="show-text" style="display: none;"></div>
+      </div>
     </div>
 
-    <!-- 币币兑换模块：ETH↔USDT、BNB↔USDT + 自动汇率 -->
-    <div class="card">
-      <h3 class="card-title">💱 币币兑换（自动汇率）</h3>
-      <div class="rate-box" id="rateInfo">
-        正在加载实时汇率...
+    <!-- BNB兑换页面 -->
+    <div id="swap" class="page">
+      <div class="card">
+        <h3 class="card-title">💱 BNB/ETH 币币兑换（自动汇率）</h3>
+        <div class="rate-box" id="rateInfo">
+          正在加载实时汇率...
+        </div>
+        <select id="swapFrom">
+          <option value="ETH">ETH</option>
+          <option value="BNB">BNB</option>
+          <option value="USDT">USDT</option>
+        </select>
+        <select id="swapTo">
+          <option value="USDT">USDT</option>
+          <option value="ETH">ETH</option>
+          <option value="BNB">BNB</option>
+        </select>
+        <input type="number" id="swapAmount" placeholder="输入兑换数量，自动计算汇率" oninput="calcSwapResult()">
+        <div class="show-text" id="swapResult" style="display:none;"></div>
+        <button class="btn" onclick="swapToken()">确认兑换</button>
       </div>
-      <select id="swapFrom">
-        <option value="ETH">ETH</option>
-        <option value="BNB">BNB</option>
-        <option value="USDT">USDT</option>
-      </select>
-      <select id="swapTo">
-        <option value="USDT">USDT</option>
-        <option value="ETH">ETH</option>
-        <option value="BNB">BNB</option>
-      </select>
-      <input type="number" id="swapAmount" placeholder="输入兑换数量，自动计算汇率" oninput="calcSwapResult()">
-      <div class="show-text" id="swapResult" style="display:none;"></div>
-      <button class="btn" onclick="swapToken()">确认兑换</button>
     </div>
 
-    <!-- 转账模块：OKX自动Gas模式 -->
-    <div class="card">
-      <h3 class="card-title">💎 代币转账（自动Gas）</h3>
-      <select id="token">
-        <option value="ETH">ETH 原生代币</option>
-        <option value="ETH_USDT">ETH链 USDT 稳定币</option>
-        <option value="BNB">BNB 原生代币</option>
-        <option value="BSC_USDT">BSC链 USDT 稳定币</option>
-      </select>
-      <input type="text" id="to" placeholder="输入接收钱包地址 0x...">
-      <input type="number" id="amount" placeholder="输入转账数量">
-      <button class="btn" onclick="sendTx()">确认发起转账</button>
+    <!-- 主网管理页面 -->
+    <div id="network" class="page">
+      <div class="card">
+        <h3 class="card-title">✨ 主网管理</h3>
+        <select id="networkSelect">
+          <option value="1">ETH 以太坊主网</option>
+          <option value="56">BNB Chain 币安智能链</option>
+        </select>
+      </div>
     </div>
 
-    <div class="card">
-      <h3 class="card-title">🔍 链上交易溯源查询</h3>
-      <input type="text" id="txHash" placeholder="输入交易哈希 TxHash">
-      <button class="btn" onclick="queryTx()">查询链上详情</button>
-      <div id="txResult" class="show-text" style="display: none;"></div>
+    <!-- 代币转账页面 -->
+    <div id="transfer" class="page">
+      <div class="card">
+        <h3 class="card-title">💎 代币转账（自动Gas）</h3>
+        <select id="token">
+          <option value="ETH">ETH 原生代币</option>
+          <option value="ETH_USDT">ETH链 USDT 稳定币</option>
+          <option value="BNB">BNB 原生代币</option>
+          <option value="BSC_USDT">BSC链 USDT 稳定币</option>
+        </select>
+        <input type="text" id="to" placeholder="输入接收钱包地址 0x...">
+        <input type="number" id="amount" placeholder="输入转账数量">
+        <button class="btn" onclick="sendTx()">确认发起转账</button>
+      </div>
+    </div>
+
+    <!-- 链上查询页面 -->
+    <div id="query" class="page">
+      <div class="card">
+        <h3 class="card-title">🔍 链上交易溯源查询</h3>
+        <input type="text" id="txHash" placeholder="输入交易哈希 TxHash">
+        <button class="btn" onclick="queryTx()">查询链上详情</button>
+        <div id="txResult" class="show-text" style="display: none;"></div>
+      </div>
     </div>
   </div>
 
 <script>
-// 链配置
+// 全局变量
+let currentNet = 1; // 默认ETH主网
 const RPC = {
   1: "https://mainnet.infura.io/v3/YOUR_KEY",
   56: "https://bsc-dataseed.binance.org"
@@ -264,6 +358,34 @@ const USDT = {
 
 // 实时汇率缓存
 let priceData = { eth: 0, bnb: 0, usdt: 1 };
+
+// 页面切换
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// 右上角快速切换主网 ETH <-> BNB
+function quickSwitchNet() {
+  if(currentNet === 1) {
+    currentNet = 56;
+    document.getElementById('netBtn').innerText = "BNB 主网";
+    document.getElementById('networkSelect').value = 56;
+  } else {
+    currentNet = 1;
+    document.getElementById('netBtn').innerText = "ETH 主网";
+    document.getElementById('networkSelect').value = 1;
+  }
+  // 如果已连接ImToken，同步切换链
+  if(window.ethereum) {
+    window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + currentNet.toString(16) }]
+    });
+  }
+}
 
 // 自动加载实时汇率
 async function loadPrice(){
@@ -297,12 +419,10 @@ function calcSwapResult(){
     `兑换结果：${amount} ${from} ≈ ${result.toFixed(4)} ${to}`;
 }
 
-// 兑换逻辑（ETH↔USDT、BNB↔USDT）
 async function swapToken(){
   alert("✅ 币币兑换功能已集成，自动使用最优汇率完成ETH/BNB与USDT兑换");
 }
 
-// 初始化加载汇率
 window.onload = loadPrice;
 
 // 钱包核心逻辑
@@ -378,11 +498,10 @@ async function connectWallet() {
   encryptedPrivateKey = null;
   sessionPwd = null;
 
-  const chainId = document.getElementById("network").value;
   try {
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x' + parseInt(chainId).toString(16) }]
+      params: [{ chainId: '0x' + currentNet.toString(16) }]
     });
 
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -403,18 +522,17 @@ async function connectWallet() {
   }
 }
 
-// OKX风格：自动估算Gas，无需手动填写
+// OKX风格：自动估算Gas
 async function sendTx() {
   if (!web3 && !isLocalWallet) return alert("请先连接钱包");
 
-  const chainId = document.getElementById("network").value;
   const token = document.getElementById("token").value;
   const to = document.getElementById("to").value.trim();
   const amount = document.getElementById("amount").value;
 
   if (!to || !amount) return alert("请填写完整转账信息");
 
-  const rpcUrl = RPC[chainId];
+  const rpcUrl = RPC[currentNet];
   const tempWeb3 = new Web3(rpcUrl);
 
   let txObj = {
@@ -426,20 +544,20 @@ async function sendTx() {
   };
 
   if(token === "ETH"){
-    if(chainId !== 1) return alert("请切换ETH主网");
+    if(currentNet !== 1) return alert("请切换ETH主网");
     txObj.value = tempWeb3.utils.toHex(tempWeb3.utils.toWei(amount, 'ether'));
   } else if(token === "BNB"){
-    if(chainId !== 56) return alert("请切换BNB链");
+    if(currentNet !== 56) return alert("请切换BNB链");
     txObj.value = tempWeb3.utils.toHex(tempWeb3.utils.toWei(amount, 'ether'));
   } else if(token === "ETH_USDT"){
-    if(chainId !==1) return alert("请切换ETH主网");
+    if(currentNet !==1) return alert("请切换ETH主网");
     const data = tempWeb3.eth.abi.encodeFunctionCall({
       name:"transfer",inputs:[{type:"address"},{type:"uint256"}]
     },[to,tempWeb3.utils.toWei(amount,'mwei')]);
     txObj.to = USDT[1];
     txObj.data = data;
   } else if(token === "BSC_USDT"){
-    if(chainId !==56) return alert("请切换BNB链");
+    if(currentNet !==56) return alert("请切换BNB链");
     const data = tempWeb3.eth.abi.encodeFunctionCall({
       name:"transfer",inputs:[{type:"address"},{type:"uint256"}]
     },[to,tempWeb3.utils.toWei(amount,'mwei')]);
@@ -466,8 +584,7 @@ async function sendTx() {
 async function queryTx() {
   const hash = document.getElementById("txHash").value.trim();
   if (!hash) return alert("请输入交易哈希");
-  const chainId = document.getElementById("network").value;
-  const rpc = new Web3(RPC[chainId]);
+  const rpc = new Web3(RPC[currentNet]);
   try {
     const res = await rpc.eth.getTransactionReceipt(hash);
     const dom = document.getElementById("txResult");
@@ -475,7 +592,7 @@ async function queryTx() {
     dom.innerHTML = `
       交易状态：${res.status ? '成功' : '失败'}<br>
       区块高度：${res.blockNumber}<br>
-      区块浏览器：<a href="${EXPLORER[chainId] + hash}" target="_blank" style="color:#165DFF">点击查看</a>
+      区块浏览器：<a href="${EXPLORER[currentNet] + hash}" target="_blank" style="color:#165DFF">点击查看</a>
     `;
   } catch (e) {
     alert("查询失败");
