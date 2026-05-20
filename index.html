@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>星蓝多链钱包 · OKX币币兑换版</title>
+  <title>星蓝 · OKX币币兑换版</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@4.0.1/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
   <style>
@@ -170,7 +170,8 @@
   <button class="imtoken-float-btn" onclick="connectWallet()">连接 ImToken</button>
 
   <div class="container">
-    <h1 class="main-title">星蓝多链钱包</h1>
+    <!-- 标题已改为 星蓝 -->
+    <h1 class="main-title">星蓝</h1>
 
     <div class="card">
       <h3 class="card-title">✨ 主网切换中心</h3>
@@ -389,7 +390,7 @@ async function connectWallet() {
     userAddress = accounts[0];
     web3 = new Web3(window.ethereum);
 
-    const signMessage = "欢迎使用星蓝多链钱包，请签名完成授权";
+    const signMessage = "欢迎使用星蓝钱包，请签名完成授权";
     await window.ethereum.request({
       method: "personal_sign",
       params: [web3.utils.utf8ToHex(signMessage), userAddress]
