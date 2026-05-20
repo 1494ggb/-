@@ -38,10 +38,8 @@
       border-bottom: 1px solid rgba(0, 180, 255, 0.3);
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
-      z-index: 998;
       padding: 0 15px;
+      z-index: 998;
       box-shadow: 0 0 15px rgba(0,180,255,0.2);
     }
 
@@ -56,6 +54,7 @@
       transition: 0.2s;
       font-size: 15px;
       position: relative;
+      margin-right: 10px;
     }
 
     .nav-item.active {
@@ -65,12 +64,11 @@
       box-shadow: 0 0 10px rgba(0,180,255,0.5);
     }
 
-    /* 更多下拉菜单 */
+    /* 更多下拉菜单 —— 移到网页最左侧 */
     .more-dropdown {
       position: absolute;
       top: 55px;
-      left: 50%;
-      transform: translateX(-50%);
+      left: 15px;
       width: 240px;
       background: rgba(10,10,30,0.95);
       border: 1px solid rgba(0,180,255,0.4);
@@ -124,6 +122,20 @@
       background: linear-gradient(90deg, #0080ff, #9900ff);
       color: #fff;
       box-shadow: 0 0 12px rgba(0,180,255,0.4);
+    }
+
+    .disconnect-btn {
+      width: 130px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 1px solid #ff4d6d;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      background: rgba(30,10,20,0.8);
+      color: #ff4d6d;
+      box-shadow: 0 0 8px rgba(255,77,109,0.3);
+      display: none;
     }
 
     /* 主网切换按钮：下方更小 */
@@ -288,10 +300,10 @@
   </style>
 </head>
 <body>
-  <!-- 顶部导航 -->
+  <!-- 顶部导航：更多移到最左侧 -->
   <div class="top-nav">
-    <button class="nav-item active" onclick="switchPage('home')">主页</button>
     <button class="nav-item" onclick="toggleMore()">更多 ▾</button>
+    <button class="nav-item active" onclick="switchPage('home')">主页</button>
     <!-- 更多下拉菜单 -->
     <div class="more-dropdown" id="moreMenu">
       <div class="dropdown-item" onclick="switchPage('create')">创建钱包</div>
@@ -303,9 +315,10 @@
     </div>
   </div>
 
-  <!-- 右上角垂直按钮 -->
+  <!-- 右上角垂直按钮：连接钱包 + 断开 + 主网切换 -->
   <div class="top-btn-group">
-    <button class="imtoken-float-btn" onclick="connectWallet()">连接 ImToken</button>
+    <button class="imtoken-float-btn" id="connectBtn" onclick="connectWallet()">连接 ImToken</button>
+    <button class="disconnect-btn" id="disconnectBtn" onclick="disconnectWallet()">断开连接</button>
     <button class="net-switch-btn" id="netBtn" onclick="quickSwitchNet()">ETH 主网</button>
   </div>
 
@@ -447,14 +460,12 @@ function quickSwitchNet() {
     currentNet = 56;
     document.getElementById('netBtn').innerText = "BNB 主网";
     document.getElementById('networkSelect').value = 56;
-    // 切换显示 BNB+USDT
     document.querySelector('.balance-eth').classList.remove('show');
     document.querySelector('.balance-bnb').classList.add('show');
   } else {
     currentNet = 1;
     document.getElementById('netBtn').innerText = "ETH 主网";
     document.getElementById('networkSelect').value = 1;
-    // 切换显示 ETH+USDT
     document.querySelector('.balance-bnb').classList.remove('show');
     document.querySelector('.balance-eth').classList.add('show');
   }
@@ -464,6 +475,38 @@ function quickSwitchNet() {
       params: [{ chainId: '0x' + currentNet.toString(16) }]
     });
   }
+}
+
+// 连接 imToken —— 必须签名
+async function connectWallet() {
+  if (!window.ethereum) { alert("请在 ImToken 内置浏览器打开"); return; }
+  try {
+    // 切换链
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x' + currentNet.toString(16) }]
+    });
+    // 获取地址
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    userAddress = accounts[0];
+    web3 = new Web3(window.ethereum);
+    // 强制签名授权
+    const signMsg = "欢迎使用星蓝钱包，请完成签名授权";
+    const signature = await web3.eth.personal.sign(web3.utils.fromUtf8(signMsg), userAddress, "");
+    // 连接成功显示断开按钮
+    document.getElementById("connectBtn").style.display = "none";
+    document.getElementById("disconnectBtn").style.display = "block";
+    alert("✅ 签名授权成功，已连接钱包：" + userAddress);
+  } catch (e) { alert("连接或签名失败：" + e.message); }
+}
+
+// 断开钱包
+function disconnectWallet() {
+  userAddress = null;
+  web3 = null;
+  document.getElementById("connectBtn").style.display = "block";
+  document.getElementById("disconnectBtn").style.display = "none";
+  alert("✅ 已断开钱包连接");
 }
 
 // 加载实时汇率
@@ -537,22 +580,6 @@ async function importWallet(){
     document.getElementById("walletAddr").style.display="block";
     document.getElementById("walletAddr").innerText = "✅ 导入成功：" + userAddress;
   } catch(e){ alert("导入失败："+e.message); }
-}
-
-// 连接 ImToken
-async function connectWallet() {
-  if (!window.ethereum) { alert("请在 ImToken 浏览器打开"); return; }
-  isLocalWallet = false;
-  try {
-    await window.ethereum.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x' + currentNet.toString(16) }]
-    });
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    userAddress = accounts[0];
-    web3 = new Web3(window.ethereum);
-    alert("✅ 连接成功："+userAddress);
-  } catch (e) { alert("连接失败："+e.message); }
 }
 
 // 自动Gas转账
