@@ -170,14 +170,13 @@
   <button class="imtoken-float-btn" onclick="connectWallet()">连接 ImToken</button>
 
   <div class="container">
-    <!-- 标题已改为 星蓝 -->
     <h1 class="main-title">星蓝</h1>
 
     <div class="card">
       <h3 class="card-title">✨ 主网切换中心</h3>
       <select id="network">
-        <option value="1">✨ ETH 以太坊主网</option>
-        <option value="56">✨ BNB Chain 币安智能链</option>
+        <option value="1">ETH 以太坊主网</option>
+        <option value="56">BNB Chain 币安智能链</option>
       </select>
     </div>
 
@@ -210,14 +209,14 @@
         正在加载实时汇率...
       </div>
       <select id="swapFrom">
-        <option value="ETH">🪙 ETH</option>
-        <option value="BNB">🪙 BNB</option>
-        <option value="USDT">🪙 USDT</option>
+        <option value="ETH">ETH</option>
+        <option value="BNB">BNB</option>
+        <option value="USDT">USDT</option>
       </select>
       <select id="swapTo">
-        <option value="USDT">🪙 USDT</option>
-        <option value="ETH">🪙 ETH</option>
-        <option value="BNB">🪙 BNB</option>
+        <option value="USDT">USDT</option>
+        <option value="ETH">ETH</option>
+        <option value="BNB">BNB</option>
       </select>
       <input type="number" id="swapAmount" placeholder="输入兑换数量，自动计算汇率" oninput="calcSwapResult()">
       <div class="show-text" id="swapResult" style="display:none;"></div>
@@ -228,10 +227,10 @@
     <div class="card">
       <h3 class="card-title">💎 代币转账（自动Gas）</h3>
       <select id="token">
-        <option value="ETH">🪙 ETH 原生代币</option>
-        <option value="ETH_USDT">🪙 ETH链 USDT 稳定币</option>
-        <option value="BNB">🪙 BNB 原生代币</option>
-        <option value="BSC_USDT">🪙 BSC链 USDT 稳定币</option>
+        <option value="ETH">ETH 原生代币</option>
+        <option value="ETH_USDT">ETH链 USDT 稳定币</option>
+        <option value="BNB">BNB 原生代币</option>
+        <option value="BSC_USDT">BSC链 USDT 稳定币</option>
       </select>
       <input type="text" id="to" placeholder="输入接收钱包地址 0x...">
       <input type="number" id="amount" placeholder="输入转账数量">
